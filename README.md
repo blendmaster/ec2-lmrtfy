@@ -1,5 +1,4 @@
-`s/(ec2|ip)-(\d+)-(\d+)-(\d+)-(\d+).*/$1.$2.$3.$4`, for DNS
-==========================================================
+# `s/(ec2|ip)-(\d+)-(\d+)-(\d+)-(\d+).*/$1.$2.$3.$4`, for DNS
 
 Resolve those damn ec2-style hostnames into A records, whereever you are,
 even if stupid applications ([cough EMR YARN cough][0]) leave off the
@@ -12,14 +11,11 @@ e.g. `ip-1-2-3-4.ec2.internal` will immediately resolve to an A record
 for `1.2.3.4`, as will `ip-1-2-3-4`, or `ec2-1-2-3-4.compute-1.amazonaws.com`.
 
 All other requests are proxied upstream, defined using a text file in
-`resolv.conf` syntax: ::
+`resolv.conf` syntax:
 
     nameserver 104.219.55.89
 
-Usage
-=====
-
-::
+## Usage
 
     ec2-lmrtfy [CONFIG_FILE]
 
