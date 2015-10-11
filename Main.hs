@@ -120,12 +120,12 @@ run conf = withSocketsDo $ do
 {--
  - parse config file.
  -}
-readHosts :: FilePath -> IO [HostName]
-readHosts filename =
-    B.readFile filename >>= either (fail . ("parse hosts fail:"++)) return . parseHosts
+readResolv :: FilePath -> IO [HostName]
+readResolv filename =
+    B.readFile filename >>= either (fail . ("parse resolv fail:"++)) return . parseResolv
   where
-    parseHosts :: B.ByteString -> Either String [HostName]
-    parseHosts s = mapM (parseOnly nameserver) $ B.lines s
+    parseResolv :: B.ByteString -> Either String [HostName]
+    parseResolv s = mapM (parseOnly nameserver) $ B.lines s
     nameserver :: Parser HostName
     nameserver = do
         _ <- string "nameserver"
@@ -136,6 +136,6 @@ readHosts filename =
 main :: IO ()
 main = do
     args <- getArgs
-    servers <- readHosts $ fromMaybe "./hosts" (listToMaybe args)
+    servers <- readResolv $ fromMaybe "./resolv.conf" (listToMaybe args)
     print servers
     run def{nameservers=servers}

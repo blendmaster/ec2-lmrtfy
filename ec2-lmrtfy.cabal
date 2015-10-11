@@ -1,0 +1,28 @@
+name:                ec2-lmrtfy
+version:             1.0.0
+synopsis:            A stupid dns proxy for ec2's ip-x-x-x-x hostnames.
+description:         A stupid dns proxy that parses out ec2-style ip-derived hostnames into the obvious A response, for when you can't use amazon's DNS servers that do the same thing.
+homepage:            https://github.com/blendmaster/ec2-lmrtfy
+license:             GPL-3
+license-file:        LICENSE
+author:              steven (blendmaster@gmail.com)
+maintainer:          steven (blendmaster@gmail.com)
+category:            Network
+build-type:          Simple
+cabal-version:       >=1.8
+
+source-repository head
+  type:     git
+  location: git://github.com/blendmaster/ec2-lmrtfy.git
+
+executable ec2-lmrtfy
+  GHC-Options:   -Wall
+  main-is:       Main.hs
+  build-depends: base
+               , network
+               , data-default
+               , bytestring
+               , attoparsec
+               , iproute
+               , dns
+
