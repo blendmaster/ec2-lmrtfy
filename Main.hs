@@ -5,8 +5,7 @@ import Control.Concurrent (forkIO)
 import Control.Monad (forever)
 import Control.Applicative ( (<|>) )
 import Data.Default (Default(def))
-import Data.IP (IPv4, toIPv4)
-import Data.List (partition)
+import Data.IP (toIPv4)
 import Data.Maybe
 import System.Environment (getArgs)
 import System.Timeout (timeout)
@@ -17,13 +16,10 @@ import Data.Attoparsec.ByteString.Char8
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy as BL
 
-type Host = (Domain, IPv4)
-
 data Conf = Conf
   { bufSize     :: Int
   , timeOut     :: Int
   , nameservers :: [HostName]
-  , hosts       :: [Host]
   }
 
 instance Default Conf where
@@ -31,7 +27,6 @@ instance Default Conf where
       { bufSize     = 512
       , timeOut     = 10 * 1000 * 1000
       , nameservers = []
-      , hosts       = []
       }
 
 toEither :: a -> Maybe b -> Either a b
@@ -60,7 +55,7 @@ proxyRequest Conf{..} server req = do
 
 {--
  - Parse out EC2-style "hostnames" derived from the IP address, e.g.
- - ec2-203-0-113-25.compute-1.amazonaws.com. -> 203.0.113.25 
+ - ec2-203-0-113-25.compute-1.amazonaws.com. -> 203.0.113.25
  -}
 resolveEc2Hostname :: DNSMessage -> Maybe DNSMessage
 resolveEc2Hostname req@(DNSMessage {question = (q@(Question domain A):_)}) =
@@ -72,7 +67,7 @@ resolveEc2Hostname req@(DNSMessage {question = (q@(Question domain A):_)}) =
         _ <- "ec2-" <|> "ip-"
         octets <- map read <$> (many1 digit `sepBy` string "-")
         case length octets of
-          4 -> 
+          4 ->
               return $ responseA ident q [ip]
             where ip = toIPv4 octets
           _ -> fail "not an ec2 ip"
@@ -125,25 +120,12 @@ run conf = withSocketsDo $ do
 {--
  - parse config file.
  -}
-readHosts :: FilePath -> IO ([Host], [HostName])
+readHosts :: FilePath -> IO [HostName]
 readHosts filename =
     B.readFile filename >>= either (fail . ("parse hosts fail:"++)) return . parseHosts
   where
-    parseHosts :: B.ByteString -> Either String ([Host], [HostName])
-    parseHosts s = let (serverLines, hostLines) = partition (B.isPrefixOf "nameserver") (B.lines s)
-                   in  (,) <$> mapM (parseOnly host) hostLines
-                           <*> mapM (parseOnly nameserver) serverLines
-
-    host :: Parser Host
-    host = do
-        skipSpace
-        ip <- toIPv4 . map read <$> (many1 digit `sepBy` string ".")
-        _ <- space
-        skipSpace
-        dom <- takeWhile (not . isSpace)
-        skipSpace
-        return (dom, ip)
-
+    parseHosts :: B.ByteString -> Either String [HostName]
+    parseHosts s = mapM (parseOnly nameserver) $ B.lines s
     nameserver :: Parser HostName
     nameserver = do
         _ <- string "nameserver"
@@ -154,6 +136,6 @@ readHosts filename =
 main :: IO ()
 main = do
     args <- getArgs
-    (hosts, servers) <- readHosts $ fromMaybe "./hosts" (listToMaybe args)
-    print (hosts, servers)
-    run def{hosts=hosts, nameservers=servers}
+    servers <- readHosts $ fromMaybe "./hosts" (listToMaybe args)
+    print servers
+    run def{nameservers=servers}
