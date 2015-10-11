@@ -1,7 +1,6 @@
 {-# LANGUAGE RecordWildCards, OverloadedStrings #-}
 
 import Prelude hiding (takeWhile)
-import Control.Applicative ( (<$>), (<*>) )
 import Control.Concurrent (forkIO)
 import Control.Monad (forever)
 import Data.Default (Default(def))
@@ -13,7 +12,7 @@ import System.Timeout (timeout)
 import Network.Socket.ByteString (sendAll, sendAllTo, recvFrom)
 import Network.Socket hiding (recvFrom)
 import Network.DNS
-import Data.Attoparsec.Char8
+import Data.Attoparsec.ByteString.Char8 
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy as BL
 
@@ -77,7 +76,7 @@ handleRequest conf req =
     lookupHosts = do
         q <- listToMaybe . filterA . question $ req
         (_, ip) <- listToMaybe . filterHost (qname q) $ hosts conf
-        return $ responseA ident q ip
+        return $ responseA ident q [ip] 
 
 {--
  - Parse request and compose response.
